@@ -7,9 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1D50-mXNvTvJWAtUOULfViqFOIe5D64Aa
 """
 
-!pip install pyngrok flask
-!pip install folium
-!pip install gspread
+#!pip install pyngrok flask
+#!pip install folium
+#!pip install gspread
 #!ngrok authtoken 2xaXwGP2RC9L0F4Ejti15YRP4Io_7msuBBpvFpd7o71Hpyk7t
 
 from flask import Flask, request, render_template_string, redirect, url_for
