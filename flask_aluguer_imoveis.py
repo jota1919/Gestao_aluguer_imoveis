@@ -17,17 +17,23 @@ from flask import Flask, request, render_template_string, redirect, url_for
 import gspread
 import pandas as pd
 from google.auth import default
-from google.colab import auth
 import folium
 
 # Autenticação Google
-auth.authenticate_user()
-creds, _ = default()
-gc = gspread.authorize(creds)
+import gspread
+from google.oauth2.service_account import Credentials
 
-# Google Sheets
-spreadsheet_id = '1c0iF-CUNAgAHKCxIOGEPIJqtYTE96I6KZGAmzEIVzr8'
-sh = gc.open_by_key(spreadsheet_id)
+# Define o escopo
+scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+
+# Cria as credenciais
+credentials = Credentials.from_service_account_file('service_account.json', scopes=scopes)
+
+# Autentica o gspread
+client = gspread.authorize(credentials)
+
+# Agora podes usar o `client` para interagir com o Google Sheets
+sheet = client.open("gestão de aluguer de imóveis").sheet1
 
 df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
 df_clientes = pd.DataFrame(sh.worksheet("Clientes").get_all_records())
