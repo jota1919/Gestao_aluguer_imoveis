@@ -21,13 +21,16 @@ import folium
 
 # Autenticação Google
 import gspread
+import os
+import json
 from google.oauth2.service_account import Credentials
 
 # Define o escopo
 scopes = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 # Cria as credenciais
-credentials = Credentials.from_service_account_file('service_account.json', scopes=scopes)
+service_account_info = json.loads(os.environ['GOOGLE_CREDENTIALS'])
+credentials = Credentials.from_service_account_info(service_account_info, scopes=scopes)
 
 # Autentica o gspread
 client = gspread.authorize(credentials)
