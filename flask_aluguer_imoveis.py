@@ -151,5 +151,9 @@ def privado():
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
 
 #app.run(port=port)
+import os
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 10000))  # Usa a porta do Render ou 10000 por padrão
+    app.run(host="0.0.0.0", port=port)
+
