@@ -37,6 +37,8 @@ client = gspread.authorize(credentials)
 
 # Agora podes usar o `client` para interagir com o Google Sheets
 sheet = client.open("gestão de aluguer de imóveis").sheet1
+sh = client.open("gestão de aluguer de imóveis")
+
 
 df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
 df_clientes = pd.DataFrame(sh.worksheet("Clientes").get_all_records())
