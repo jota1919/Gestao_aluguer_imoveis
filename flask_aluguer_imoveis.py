@@ -209,19 +209,6 @@ def privado():
     df_reservas["Data Fim"] = pd.to_datetime(df_reservas["Data Fim"])
     df_reservas["Dias Ocupados"] = (df_reservas["Data Fim"] - df_reservas["Data Início"]).dt.days + 1
 
-    # 1. Ocupação por Imóvel
-    ocupacao = df_reservas.groupby("Imóvel (chave)")["Dias Ocupados"].sum()
-    dias_total = (df_reservas["Data Início"].min(), df_reservas["Data Fim"].max())
-    dias_periodo = (dias_total[1] - dias_total[0]).days + 1
-    taxa_ocupacao = (ocupacao / dias_periodo * 100).sort_values(ascending=False)
-
-    fig1, ax1 = plt.subplots()
-    taxa_ocupacao.plot(kind="barh", ax=ax1, color='skyblue')
-    ax1.set_title("Taxa de Ocupação por Imóvel (%)")
-    ax1.set_xlabel("Percentagem")
-    plt.tight_layout()
-    grafico1 = gerar_grafico_base64(fig1)
-    plt.close(fig1)
 
     # 2. Reservas por mês
     df_reservas["AnoMes"] = df_reservas["Data Início"].dt.to_period("M").astype(str)
@@ -285,21 +272,20 @@ def privado():
     # Conteúdo HTML final
     conteudo = f"""
     {filtros_html}
-    <h2>Gráficos de Análise</h2>
-    <div class="row">
-        <div class="col-md-6"><img src="data:image/png;base64,{grafico1}" class="img-fluid"></div>
-        <div class="col-md-6"><img src="data:image/png;base64,{grafico2}" class="img-fluid"></div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-md-6"><img src="data:image/png;base64,{grafico3}" class="img-fluid"></div>
-    </div>
-    <hr>
+   
+    
     <h2>Clientes</h2>
     {tabela_clientes}
     <h2>Reservas</h2>
     {tabela_reservas}
     <h2>Imóveis - Detalhes</h2>
     {tabela_imoveis}
+
+     <h2>Gráficos de Análise</h2>
+    <div class="row">
+        <div class="col-md-6"><img src="data:image/png;base64,{grafico2}" class="img-fluid"></div>
+        <div class="col-md-6"><img src="data:image/png;base64,{grafico3}" class="img-fluid"></div>
+    </div>
     """
 
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
