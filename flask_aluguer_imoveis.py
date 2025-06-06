@@ -184,8 +184,9 @@ def privado():
 
         # Filtros reservas
         email_reserva = request.form.get("email_reserva")
-        if email_reserva:
-            df_reservas_filt = df_reservas_filt[df_reservas_filt["Email"].str.contains(email_reserva, case=False, na=False)]
+        if email_reserva and ":Email Cliente" in df_reservas_filt.columns:
+            df_reservas_filt = df_reservas_filt[df_reservas_filt[":Email Cliente"].astype(str).str.contains(email_reserva, case=False, na=False)]
+
 
 
     filtros_html = """
@@ -207,6 +208,7 @@ def privado():
         <div class="row mb-3">
         <div class="col-md-3"><input type="text" name="email_reserva" class="form-control" placeholder="Email do Cliente"></div>
         </div>
+
 
 
         <div class="row mb-3">
