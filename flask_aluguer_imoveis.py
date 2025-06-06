@@ -157,80 +157,92 @@ def normalizar(texto):
 
 @app.route("/privado", methods=["GET", "POST"])
 def privado():
+    # Faz uma cópia dos dataframes para filtro
     df_imoveis_filt = df_imoveis.copy()
     df_clientes_filt = df_clientes.copy()
     df_reservas_filt = df_reservas.copy()
 
+    # Limpa os nomes das colunas para evitar espaços inesperados
+    df_imoveis_filt.columns = df_imoveis_filt.columns.str.strip()
+    df_clientes_filt.columns = df_clientes_filt.columns.str.strip()
+    df_reservas_filt.columns = df_reservas_filt.columns.str.strip()
+
     if request.method == "POST":
         # Filtros imóveis
-        local = request.form.get("local")
-        preco_min = request.form.get("preco_min")
-        preco_max = request.form.get("preco_max")
+        local = request.form.get("local", "").strip()
+        preco_min = request.form.get("preco_min", "").strip()
+        preco_max = request.form.get("preco_max", "").strip()
 
         if local:
-            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Localização"].apply(
-                lambda x: local.lower() in normalizar(x))]
+            df_imoveis_filt = df_imoveis_filt[
+                df_imoveis_filt["Localização"].apply(lambda x: local.lower() in normalizar(str(x)))
+            ]
         if preco_min:
-            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] >= float(preco_min)]
+            try:
+                preco_min_f = float(preco_min)
+                df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] >= preco_min_f]
+            except ValueError:
+                pass
         if preco_max:
-            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] <= float(preco_max)]
+            try:
+                preco_max_f = float(preco_max)
+                df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] <= preco_max_f]
+            except ValueError:
+                pass
 
         # Filtros clientes
-        nome_cliente = request.form.get("nome_cliente")
-        email_cliente = request.form.get("email_cliente")
+        nome_cliente = request.form.get("nome_cliente", "").strip()
+        email_cliente = request.form.get("email_cliente", "").strip()
 
         if nome_cliente:
-            df_clientes_filt = df_clientes_filt[df_clientes_filt["Nome"].apply(
-                lambda x: nome_cliente.lower() in normalizar(x))]
+            df_clientes_filt = df_clientes_filt[
+                df_clientes_filt["Nome"].apply(lambda x: nome_cliente.lower() in normalizar(str(x)))
+            ]
         if email_cliente:
-            df_clientes_filt = df_clientes_filt[df_clientes_filt["Email"].str.contains(email_cliente, case=False)]
+            df_clientes_filt = df_clientes_filt[
+                df_clientes_filt["Email"].str.contains(email_cliente, case=False, na=False)
+            ]
 
-        # Filtros reservas
-        email_reserva = request.form.get("email_reserva")
-        if email_reserva and ":Email Cliente" in df_reservas_filt.columns:
-            df_reservas_filt = df_reservas_filt[df_reservas_filt[":Email Cliente"].astype(str).apply(
-            lambda x: email_reserva.lower() in normalizar(x))]
-
-
+        # Filtros reservas - com a coluna Email_Cliente
+        email_reserva = request.form.get("email_reserva", "").strip()
+        if email_reserva and "Email_Cliente" in df_reservas_filt.columns:
+            email_reserva_norm = normalizar(email_reserva)
+            df_reservas_filt = df_reservas_filt[
+                df_reservas_filt["Email_Cliente"].fillna("").astype(str).apply(
+                    lambda x: email_reserva_norm in normalizar(x.strip())
+                )
+            ]
 
     filtros_html = """
-<form method="POST" class="mb-4">
-    <h4>Filtros de Imóveis</h4>
-    <div class="row mb-3">
-        <div class="col-md-3"><input type="text" name="local" class="form-control" placeholder="Localização" value="{local}"></div>
-        <div class="col-md-2"><input type="number" step="0.01" name="preco_min" class="form-control" placeholder="Preço Mínimo" value="{preco_min}"></div>
-        <div class="col-md-2"><input type="number" step="0.01" name="preco_max" class="form-control" placeholder="Preço Máximo" value="{preco_max}"></div>
-    </div>
-
-    <h4>Filtros de Clientes</h4>
-    <div class="row mb-3">
-        <div class="col-md-3"><input type="text" name="nome_cliente" class="form-control" placeholder="Nome do Cliente" value="{nome_cliente}"></div>
-        <div class="col-md-3"><input type="text" name="email_cliente" class="form-control" placeholder="Email" value="{email_cliente}"></div>
-    </div>
-
-    <h4>Filtros de Reservas</h4>
-    <div class="row mb-3">
-        <div class="col-md-3"><input type="text" name="email_reserva" class="form-control" placeholder="Email do Cliente" value="{email_reserva}"></div>
-    </div>
-
-    <div class="row mb-3">
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    <form method="POST" class="mb-4">
+        <h4>Filtros de Imóveis</h4>
+        <div class="row mb-3">
+            <div class="col-md-3"><input type="text" name="local" class="form-control" placeholder="Localização"></div>
+            <div class="col-md-2"><input type="number" step="0.01" name="preco_min" class="form-control" placeholder="Preço Mínimo"></div>
+            <div class="col-md-2"><input type="number" step="0.01" name="preco_max" class="form-control" placeholder="Preço Máximo"></div>
         </div>
-        <div class="col-md-2">
-            <a href="/privado" class="btn btn-secondary w-100">Repor</a>
-        </div>
-    </div>
-</form>
-""".format(
-    local=request.form.get("local", "") or "",
-    preco_min=request.form.get("preco_min", "") or "",
-    preco_max=request.form.get("preco_max", "") or "",
-    nome_cliente=request.form.get("nome_cliente", "") or "",
-    email_cliente=request.form.get("email_cliente", "") or "",
-    email_reserva=request.form.get("email_reserva", "") or ""
-)
 
+        <h4>Filtros de Clientes</h4>
+        <div class="row mb-3">
+            <div class="col-md-3"><input type="text" name="nome_cliente" class="form-control" placeholder="Nome do Cliente"></div>
+            <div class="col-md-3"><input type="text" name="email_cliente" class="form-control" placeholder="Email"></div>
+        </div>
+
+        <h4>Filtros de Reservas</h4>
+        <div class="row mb-3">
+            <div class="col-md-3"><input type="text" name="email_reserva" class="form-control" placeholder="Email do Cliente"></div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+            <div class="col-md-2">
+                <a href="/privado" class="btn btn-secondary w-100">Repor</a>
+            </div>
+        </div>
+    </form>
+    """
 
     tabela_clientes = df_clientes_filt.to_html(classes='table table-striped', index=False)
     tabela_reservas = df_reservas_filt.to_html(classes='table table-striped', index=False)
