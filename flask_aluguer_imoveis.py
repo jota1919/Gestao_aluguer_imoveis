@@ -41,10 +41,7 @@ sh = client.open_by_key(SHEET_ID)
 
 
 
-df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
-df_clientes = pd.DataFrame(sh.worksheet("Clientes").get_all_records())
-df_reservas = pd.DataFrame(sh.worksheet("Reservas").get_all_records())
-df_reservas.rename(columns={":Email Cliente": "Email"}, inplace=True)
+
 
 
 # Flask
@@ -56,7 +53,7 @@ port = 5000
 SENHA_PRIVADA = "1234"
 
 # Função para gerar o mapa
-def gerar_mapa():
+def gerar_mapa(df_imoveis):
     mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6)
     for _, row in df_imoveis.iterrows():
         try:
@@ -67,6 +64,7 @@ def gerar_mapa():
         except:
             continue
     return mapa._repr_html_()
+
 
 
 
@@ -113,9 +111,11 @@ TEMPLATE_BASE = """
 
 @app.route("/")
 def home():
-    mapa_html = gerar_mapa()
-    tabela_html = df_imoveis[["Localização", "Preço/Noite (€)", "Descrição"]].to_html(classes='table table-bordered table-hover', index=False, border=0)
-
+    df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
+    mapa_html = gerar_mapa(df_imoveis)
+    tabela_html = df_imoveis[["Localização", "Preço/Noite (€)", "Descrição"]].to_html(
+        classes='table table-bordered table-hover', index=False, border=0
+    )
     conteudo = f"""
     <div id="map-container" style="height: 300px; overflow: hidden; margin-bottom: 20px;">
         {mapa_html}
@@ -157,6 +157,11 @@ def normalizar(texto):
 
 @app.route("/privado", methods=["GET", "POST"])
 def privado():
+
+    df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
+    df_clientes = pd.DataFrame(sh.worksheet("Clientes").get_all_records())
+    df_reservas = pd.DataFrame(sh.worksheet("Reservas").get_all_records())
+    df_reservas.rename(columns={":Email Cliente": "Email"}, inplace=True)
     # Faz uma cópia dos dataframes para filtro
     df_imoveis_filt = df_imoveis.copy()
     df_clientes_filt = df_clientes.copy()
