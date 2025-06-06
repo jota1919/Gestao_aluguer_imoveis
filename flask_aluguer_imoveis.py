@@ -155,68 +155,99 @@ def normalizar(texto):
     return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII').lower()
 
 
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
+from datetime import datetime
+
 @app.route("/privado", methods=["GET", "POST"])
 def privado():
-
+    # Atualiza os dados mais recentes da sheet
     df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
     df_clientes = pd.DataFrame(sh.worksheet("Clientes").get_all_records())
     df_reservas = pd.DataFrame(sh.worksheet("Reservas").get_all_records())
-    df_reservas.rename(columns={":Email Cliente": "Email"}, inplace=True)
-    # Faz uma cópia dos dataframes para filtro
+
     df_imoveis_filt = df_imoveis.copy()
     df_clientes_filt = df_clientes.copy()
     df_reservas_filt = df_reservas.copy()
 
-    # Limpa os nomes das colunas para evitar espaços inesperados
-    df_imoveis_filt.columns = df_imoveis_filt.columns.str.strip()
-    df_clientes_filt.columns = df_clientes_filt.columns.str.strip()
-    df_reservas_filt.columns = df_reservas_filt.columns.str.strip()
-
     if request.method == "POST":
-        # Filtros imóveis
-        local = request.form.get("local", "").strip()
-        preco_min = request.form.get("preco_min", "").strip()
-        preco_max = request.form.get("preco_max", "").strip()
+        local = request.form.get("local")
+        preco_min = request.form.get("preco_min")
+        preco_max = request.form.get("preco_max")
+        nome_cliente = request.form.get("nome_cliente")
+        email_cliente = request.form.get("email_cliente")
+        email_reserva = request.form.get("email_reserva")
 
         if local:
-            df_imoveis_filt = df_imoveis_filt[
-                df_imoveis_filt["Localização"].apply(lambda x: local.lower() in normalizar(str(x)))
-            ]
+            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Localização"].apply(
+                lambda x: local.lower() in normalizar(x))]
         if preco_min:
-            try:
-                preco_min_f = float(preco_min)
-                df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] >= preco_min_f]
-            except ValueError:
-                pass
+            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] >= float(preco_min)]
         if preco_max:
-            try:
-                preco_max_f = float(preco_max)
-                df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] <= preco_max_f]
-            except ValueError:
-                pass
-
-        # Filtros clientes
-        nome_cliente = request.form.get("nome_cliente", "").strip()
-        email_cliente = request.form.get("email_cliente", "").strip()
+            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] <= float(preco_max)]
 
         if nome_cliente:
-            df_clientes_filt = df_clientes_filt[
-                df_clientes_filt["Nome"].apply(lambda x: nome_cliente.lower() in normalizar(str(x)))
-            ]
+            df_clientes_filt = df_clientes_filt[df_clientes_filt["Nome"].apply(
+                lambda x: nome_cliente.lower() in normalizar(x))]
         if email_cliente:
-            df_clientes_filt = df_clientes_filt[
-                df_clientes_filt["Email"].str.contains(email_cliente, case=False, na=False)
-            ]
+            df_clientes_filt = df_clientes_filt[df_clientes_filt["Email"].str.contains(email_cliente, case=False)]
 
-        # Filtros reservas - com a coluna Email_Cliente
-        email_reserva = request.form.get("email_reserva", "").strip()
         if email_reserva and "Email_Cliente" in df_reservas_filt.columns:
-            email_reserva_norm = normalizar(email_reserva)
-            df_reservas_filt = df_reservas_filt[
-                df_reservas_filt["Email_Cliente"].fillna("").astype(str).apply(
-                    lambda x: email_reserva_norm in normalizar(x.strip())
-                )
-            ]
+            df_reservas_filt = df_reservas_filt[df_reservas_filt["Email_Cliente"].astype(str).str.contains(email_reserva, case=False, na=False)]
+
+    # ---------- GERAÇÃO DOS GRÁFICOS ----------
+
+    def gerar_grafico_base64(fig):
+        buffer = BytesIO()
+        fig.savefig(buffer, format='png', bbox_inches='tight')
+        buffer.seek(0)
+        return base64.b64encode(buffer.getvalue()).decode()
+
+    # Prepara dados
+    df_reservas["Data Início"] = pd.to_datetime(df_reservas["Data Início"])
+    df_reservas["Data Fim"] = pd.to_datetime(df_reservas["Data Fim"])
+    df_reservas["Dias Ocupados"] = (df_reservas["Data Fim"] - df_reservas["Data Início"]).dt.days + 1
+
+    # 1. Ocupação por Imóvel
+    ocupacao = df_reservas.groupby("Imóvel (chave)")["Dias Ocupados"].sum()
+    dias_total = (df_reservas["Data Início"].min(), df_reservas["Data Fim"].max())
+    dias_periodo = (dias_total[1] - dias_total[0]).days + 1
+    taxa_ocupacao = (ocupacao / dias_periodo * 100).sort_values(ascending=False)
+
+    fig1, ax1 = plt.subplots()
+    taxa_ocupacao.plot(kind="barh", ax=ax1, color='skyblue')
+    ax1.set_title("Taxa de Ocupação por Imóvel (%)")
+    ax1.set_xlabel("Percentagem")
+    plt.tight_layout()
+    grafico1 = gerar_grafico_base64(fig1)
+    plt.close(fig1)
+
+    # 2. Reservas por mês
+    df_reservas["AnoMes"] = df_reservas["Data Início"].dt.to_period("M").astype(str)
+    reservas_mes = df_reservas.groupby("AnoMes").size()
+
+    fig2, ax2 = plt.subplots()
+    reservas_mes.plot(kind="bar", ax=ax2, color='lightgreen')
+    ax2.set_title("Reservas por Mês")
+    ax2.set_ylabel("Nº de Reservas")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    grafico2 = gerar_grafico_base64(fig2)
+    plt.close(fig2)
+
+    # 3. Reservas por imóvel
+    reservas_imovel = df_reservas["Imóvel (chave)"].value_counts()
+
+    fig3, ax3 = plt.subplots()
+    reservas_imovel.plot(kind="pie", autopct='%1.1f%%', startangle=90, ax=ax3)
+    ax3.set_ylabel("")
+    ax3.set_title("Distribuição de Reservas por Imóvel")
+    plt.tight_layout()
+    grafico3 = gerar_grafico_base64(fig3)
+    plt.close(fig3)
+
+    # ---------- HTML ----------
 
     filtros_html = """
     <form method="POST" class="mb-4">
@@ -226,18 +257,15 @@ def privado():
             <div class="col-md-2"><input type="number" step="0.01" name="preco_min" class="form-control" placeholder="Preço Mínimo"></div>
             <div class="col-md-2"><input type="number" step="0.01" name="preco_max" class="form-control" placeholder="Preço Máximo"></div>
         </div>
-
         <h4>Filtros de Clientes</h4>
         <div class="row mb-3">
             <div class="col-md-3"><input type="text" name="nome_cliente" class="form-control" placeholder="Nome do Cliente"></div>
             <div class="col-md-3"><input type="text" name="email_cliente" class="form-control" placeholder="Email"></div>
         </div>
-
         <h4>Filtros de Reservas</h4>
         <div class="row mb-3">
             <div class="col-md-3"><input type="text" name="email_reserva" class="form-control" placeholder="Email do Cliente"></div>
         </div>
-
         <div class="row mb-3">
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
@@ -249,12 +277,23 @@ def privado():
     </form>
     """
 
+    # Tabelas
     tabela_clientes = df_clientes_filt.to_html(classes='table table-striped', index=False)
     tabela_reservas = df_reservas_filt.to_html(classes='table table-striped', index=False)
     tabela_imoveis = df_imoveis_filt.to_html(classes='table table-striped', index=False)
 
+    # Conteúdo HTML final
     conteudo = f"""
     {filtros_html}
+    <h2>Gráficos de Análise</h2>
+    <div class="row">
+        <div class="col-md-6"><img src="data:image/png;base64,{grafico1}" class="img-fluid"></div>
+        <div class="col-md-6"><img src="data:image/png;base64,{grafico2}" class="img-fluid"></div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-md-6"><img src="data:image/png;base64,{grafico3}" class="img-fluid"></div>
+    </div>
+    <hr>
     <h2>Clientes</h2>
     {tabela_clientes}
     <h2>Reservas</h2>
@@ -262,7 +301,9 @@ def privado():
     <h2>Imóveis - Detalhes</h2>
     {tabela_imoveis}
     """
+
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
+
 
 
 
