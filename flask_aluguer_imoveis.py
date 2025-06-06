@@ -55,7 +55,7 @@ SENHA_PRIVADA = "1234"
 
 # Função para gerar o mapa
 def gerar_mapa():
-    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, width='100%', height='400px')
+    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, width='100%', height='600px')
     for _, row in df_imoveis.iterrows():
         try:
             lat = float(row["Latitude"])
@@ -136,9 +136,15 @@ def login():
     """
     return render_template_string(TEMPLATE_BASE, titulo="Login - Área Privada", conteudo=conteudo)
 
+import unicodedata
+
+def normalizar(texto):
+    if isinstance(texto, str):
+        return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('utf-8').lower()
+    return ""
+
 @app.route("/privado", methods=["GET", "POST"])
 def privado():
-    # Copiar os dataframes originais
     df_imoveis_filt = df_imoveis.copy()
     df_clientes_filt = df_clientes.copy()
     df_reservas_filt = df_reservas.copy()
@@ -150,7 +156,8 @@ def privado():
         preco_max = request.form.get("preco_max")
 
         if local:
-            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Localização"].str.contains(local, case=False)]
+            df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Localização"].apply(
+                lambda x: local.lower() in normalizar(x))]
         if preco_min:
             df_imoveis_filt = df_imoveis_filt[df_imoveis_filt["Preço/Noite (€)"] >= float(preco_min)]
         if preco_max:
@@ -161,18 +168,16 @@ def privado():
         email_cliente = request.form.get("email_cliente")
 
         if nome_cliente:
-            df_clientes_filt = df_clientes_filt[df_clientes_filt["Nome"].str.contains(nome_cliente, case=False)]
+            df_clientes_filt = df_clientes_filt[df_clientes_filt["Nome"].apply(
+                lambda x: nome_cliente.lower() in normalizar(x))]
         if email_cliente:
             df_clientes_filt = df_clientes_filt[df_clientes_filt["Email"].str.contains(email_cliente, case=False)]
 
         # Filtros reservas
         cliente_reserva = request.form.get("cliente_reserva")
-        estado_reserva = request.form.get("estado_reserva")
-
         if cliente_reserva:
-            df_reservas_filt = df_reservas_filt[df_reservas_filt["Cliente"].str.contains(cliente_reserva, case=False)]
-        if estado_reserva:
-            df_reservas_filt = df_reservas_filt[df_reservas_filt["Estado"].str.contains(estado_reserva, case=False)]
+            df_reservas_filt = df_reservas_filt[df_reservas_filt["Cliente"].apply(
+                lambda x: cliente_reserva.lower() in normalizar(x))]
 
     filtros_html = """
     <form method="POST" class="mb-4">
@@ -192,7 +197,6 @@ def privado():
         <h4>Filtros de Reservas</h4>
         <div class="row mb-3">
             <div class="col-md-3"><input type="text" name="cliente_reserva" class="form-control" placeholder="Nome do Cliente"></div>
-            <div class="col-md-3"><input type="text" name="estado_reserva" class="form-control" placeholder="Estado da Reserva"></div>
         </div>
 
         <div class="row mb-3">
@@ -200,7 +204,7 @@ def privado():
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
             <div class="col-md-2">
-                <a href="/privado" class="btn btn-secondary w-100">Reset Filtros</a>
+                <a href="/privado" class="btn btn-secondary w-100">Repor</a>
             </div>
         </div>
     </form>
@@ -211,7 +215,6 @@ def privado():
     tabela_imoveis = df_imoveis_filt.to_html(classes='table table-striped', index=False)
 
     conteudo = f"""
-    <h1>Área Privada</h1>
     {filtros_html}
     <h2>Clientes</h2>
     {tabela_clientes}
@@ -221,6 +224,7 @@ def privado():
     {tabela_imoveis}
     """
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
+
 
 
 
