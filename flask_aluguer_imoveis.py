@@ -55,7 +55,7 @@ SENHA_PRIVADA = "1234"
 
 # Função para gerar o mapa
 def gerar_mapa():
-    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, height='300')  # altura menor
+    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6)
     for _, row in df_imoveis.iterrows():
         try:
             lat = float(row["Latitude"])
@@ -65,6 +65,7 @@ def gerar_mapa():
         except:
             continue
     return mapa._repr_html_()
+
 
 
 
@@ -112,8 +113,11 @@ TEMPLATE_BASE = """
 def home():
     mapa_html = gerar_mapa()
     tabela_html = df_imoveis[["Localização", "Preço/Noite (€)", "Descrição"]].to_html(classes='table table-bordered table-hover', index=False, border=0)
+
     conteudo = f"""
-    <div id="map" style="margin-bottom: 20px;">{mapa_html}</div>
+    <div id="map-container" style="height: 300px; overflow: hidden; margin-bottom: 20px;">
+        {mapa_html}
+    </div>
     <div class="tabela-wrapper">
         <h2>Lista de Imóveis</h2>
         <div style="max-height: 300px; overflow-y: auto;">
@@ -122,6 +126,7 @@ def home():
     </div>
     """
     return render_template_string(TEMPLATE_BASE, titulo="Imóveis Disponíveis", conteudo=conteudo)
+
 
 
 @app.route("/login", methods=["GET", "POST"])
