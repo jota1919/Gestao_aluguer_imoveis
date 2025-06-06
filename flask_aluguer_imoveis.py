@@ -55,7 +55,7 @@ SENHA_PRIVADA = "1234"
 
 # Função para gerar o mapa
 def gerar_mapa():
-    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, width='100%', height='600px')
+    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, height='300')  # altura menor
     for _, row in df_imoveis.iterrows():
         try:
             lat = float(row["Latitude"])
@@ -65,6 +65,7 @@ def gerar_mapa():
         except:
             continue
     return mapa._repr_html_()
+
 
 
 TEMPLATE_BASE = """
@@ -112,13 +113,16 @@ def home():
     mapa_html = gerar_mapa()
     tabela_html = df_imoveis[["Localização", "Preço/Noite (€)", "Descrição"]].to_html(classes='table table-bordered table-hover', index=False, border=0)
     conteudo = f"""
-    <div id="map">{mapa_html}</div>
+    <div id="map" style="margin-bottom: 20px;">{mapa_html}</div>
     <div class="tabela-wrapper">
         <h2>Lista de Imóveis</h2>
-        {tabela_html}
+        <div style="max-height: 300px; overflow-y: auto;">
+            {tabela_html}
+        </div>
     </div>
     """
     return render_template_string(TEMPLATE_BASE, titulo="Imóveis Disponíveis", conteudo=conteudo)
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -174,10 +178,10 @@ def privado():
             df_clientes_filt = df_clientes_filt[df_clientes_filt["Email"].str.contains(email_cliente, case=False)]
 
         # Filtros reservas
-        cliente_reserva = request.form.get("cliente_reserva")
-        if cliente_reserva:
-            df_reservas_filt = df_reservas_filt[df_reservas_filt["Cliente"].apply(
-                lambda x: cliente_reserva.lower() in normalizar(x))]
+        email_reserva = request.form.get("email_reserva")
+        if email_reserva:
+            df_reservas_filt = df_reservas_filt[df_reservas_filt["Email"].str.contains(email_reserva, case=False, na=False)]
+
 
     filtros_html = """
     <form method="POST" class="mb-4">
@@ -196,8 +200,9 @@ def privado():
 
         <h4>Filtros de Reservas</h4>
         <div class="row mb-3">
-            <div class="col-md-3"><input type="text" name="cliente_reserva" class="form-control" placeholder="Nome do Cliente"></div>
+        <div class="col-md-3"><input type="text" name="email_reserva" class="form-control" placeholder="Email do Cliente"></div>
         </div>
+
 
         <div class="row mb-3">
             <div class="col-md-2">
