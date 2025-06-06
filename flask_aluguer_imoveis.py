@@ -35,9 +35,10 @@ credentials = Credentials.from_service_account_info(service_account_info, scopes
 # Autentica o gspread
 client = gspread.authorize(credentials)
 
-# Agora podes usar o `client` para interagir com o Google Sheets
-sheet = client.open("gestão de aluguer de imóveis").sheet1
-sh = client.open("gestão de aluguer de imóveis")
+
+SHEET_ID = "1c0iF-CUNAgAHKCxIOGEPIJqtYTE96I6KZGAmzEIVzr8"  
+sh = client.open_by_key(SHEET_ID)
+
 
 
 df_imoveis = pd.DataFrame(sh.worksheet("Imoveis").get_all_records())
@@ -54,7 +55,7 @@ SENHA_PRIVADA = "1234"
 
 # Função para gerar o mapa
 def gerar_mapa():
-    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6)
+    mapa = folium.Map(location=[38.7169, -9.1399], zoom_start=6, width='80%', height='400px')
     for _, row in df_imoveis.iterrows():
         try:
             lat = float(row["Latitude"])
@@ -64,6 +65,7 @@ def gerar_mapa():
         except:
             continue
     return mapa._repr_html_()
+
 
 TEMPLATE_BASE = """
 <!DOCTYPE html>
@@ -134,13 +136,45 @@ def login():
     """
     return render_template_string(TEMPLATE_BASE, titulo="Login - Área Privada", conteudo=conteudo)
 
-@app.route("/privado")
+@app.route("/privado", methods=["GET", "POST"])
 def privado():
+    df_filtrado = df_imoveis.copy()
+    local = request.form.get("local")
+    preco_min = request.form.get("preco_min")
+    preco_max = request.form.get("preco_max")
+
+    if request.method == "POST":
+        if local:
+            df_filtrado = df_filtrado[df_filtrado["Localização"].str.contains(local, case=False)]
+        if preco_min:
+            df_filtrado = df_filtrado[df_filtrado["Preço/Noite (€)"] >= float(preco_min)]
+        if preco_max:
+            df_filtrado = df_filtrado[df_filtrado["Preço/Noite (€)"] <= float(preco_max)]
+
+    filtros_html = """
+    <form method="POST" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" name="local" class="form-control" placeholder="Filtrar por Localização">
+        </div>
+        <div class="col-md-3">
+            <input type="number" step="0.01" name="preco_min" class="form-control" placeholder="Preço Mínimo">
+        </div>
+        <div class="col-md-3">
+            <input type="number" step="0.01" name="preco_max" class="form-control" placeholder="Preço Máximo">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+    </form>
+    """
+
     tabela_clientes = df_clientes.to_html(classes='table table-striped', index=False)
     tabela_reservas = df_reservas.to_html(classes='table table-striped', index=False)
-    tabela_imoveis = df_imoveis.to_html(classes='table table-striped', index=False)
+    tabela_imoveis = df_filtrado.to_html(classes='table table-striped', index=False)
+
     conteudo = f"""
     <h1>Área Privada</h1>
+    {filtros_html}
     <h2>Clientes</h2>
     {tabela_clientes}
     <h2>Reservas</h2>
@@ -149,6 +183,7 @@ def privado():
     {tabela_imoveis}
     """
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
+
 
 #app.run(port=port)
 import os
