@@ -300,7 +300,6 @@ def privado():
         <div class="col-md-6"><img src="data:image/png;base64,{grafico2}" class="img-fluid"></div>
         <div class="col-md-6"><img src="data:image/png;base64,{grafico3}" class="img-fluid"></div>
     </div>
-    <p class="text-muted mt-4"><em>Nota: Os dados apresentados são fictícios e utilizados apenas para fins demonstrativos.</em></p>
     """
 
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
