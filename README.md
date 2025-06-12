@@ -56,8 +56,8 @@ O projeto está ligado a uma Google Sheet com várias folhas:
 |---------------|----------------|-------------|----------|------------|
 
 > 🔐 O campo "Imóvel (chave)" deve ser uma chave coerente que identifique o imóvel nas reservas (ex: `Lisboa - T2 com varanda`).
-> 
-> 📎 Links Úteis
+
+📎 Links Úteis
 > Página Render: https://mads-grupo6.onrender.com
 > 
 > Relatório de desenvolvimento: https://docs.google.com/document/d/1EfGj96c80u3TvtORRgec7DPwNJGGw42VOKWmxS5EKz4/edit?tab=t.0
