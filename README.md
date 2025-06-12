@@ -3,7 +3,8 @@
 Este projeto é uma aplicação web desenvolvida em Flask que permite a visualização de imóveis para aluguer, com acesso a dados em tempo real através de uma folha de cálculo Google Sheets. 
 Inclui uma área pública e uma área privada com filtros, análises e gráficos.
 
-👥 Autores
+#👥 Autores
+
 Este projeto foi desenvolvido no âmbito da unidade curricular de Metedologias Ágeis.
 
 Catarina Silva
@@ -58,6 +59,6 @@ O projeto está ligado a uma Google Sheet com várias folhas:
 > 🔐 O campo "Imóvel (chave)" deve ser uma chave coerente que identifique o imóvel nas reservas (ex: `Lisboa - T2 com varanda`).
 
 📎 Links Úteis
-> Página Render: https://mads-grupo6.onrender.com
-> 
-> Relatório de desenvolvimento: https://docs.google.com/document/d/1EfGj96c80u3TvtORRgec7DPwNJGGw42VOKWmxS5EKz4/edit?tab=t.0
+Página Render: https://mads-grupo6.onrender.com
+ 
+Relatório de desenvolvimento: https://docs.google.com/document/d/1EfGj96c80u3TvtORRgec7DPwNJGGw42VOKWmxS5EKz4/edit?tab=t.0
