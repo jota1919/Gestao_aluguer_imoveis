@@ -117,6 +117,9 @@ def home():
         classes='table table-bordered table-hover', index=False, border=0
     )
     conteudo = f"""
+    <div class="alert alert-warning" role="alert">
+        <strong>Nota:</strong> Os dados apresentados são <u>fictícios</u> e utilizados apenas para fins demonstrativos.
+    </div>
     <div id="map-container" style="height: 300px; overflow: hidden; margin-bottom: 20px;">
         {mapa_html}
     </div>
@@ -126,7 +129,7 @@ def home():
             {tabela_html}
         </div>
     </div>
-    <p class="text-muted mt-4"><em>Nota: Os dados apresentados são fictícios e utilizados apenas para fins demonstrativos.</em></p>
+    
     """
     return render_template_string(TEMPLATE_BASE, titulo="Imóveis Disponíveis", conteudo=conteudo)
 
@@ -272,6 +275,9 @@ def privado():
 
     # Conteúdo HTML final
     conteudo = f"""
+    <div class="alert alert-warning" role="alert">
+    <strong>Nota:</strong> Os dados apresentados são <u>fictícios</u> e utilizados apenas para fins demonstrativos.
+    </div>
     {filtros_html}
    
     
