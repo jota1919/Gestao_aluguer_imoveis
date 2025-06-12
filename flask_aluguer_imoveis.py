@@ -105,7 +105,7 @@ TEMPLATE_BASE = """
             <hr>
         <footer class="text-center mt-4 mb-2">
             <p>
-                <a href="https://docs.google.com/document/d/1EfGj96c80u3TvtORRgec7DPwNJGGw42VOKWmxS5EKz4/edit?tab=t.0#heading=h.cf0piy8x7mqc" target="_blank">Relatório</a> |
+                <a href="https://docs.google.com/document/d/1EfGj96c80u3TvtORRgec7DPwNJGGw42VOKWmxS5EKz4/edit?tab=t.0" target="_blank">Relatório</a> |
                 <a href="https://github.com/jota1919/Gestao_aluguer_imoveis" target="_blank">GitHub</a>
             </p>
         </footer>
