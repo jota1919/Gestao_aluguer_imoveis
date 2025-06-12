@@ -126,6 +126,7 @@ def home():
             {tabela_html}
         </div>
     </div>
+    <p class="text-muted mt-4"><em>Nota: Os dados apresentados são fictícios e utilizados apenas para fins demonstrativos.</em></p>
     """
     return render_template_string(TEMPLATE_BASE, titulo="Imóveis Disponíveis", conteudo=conteudo)
 
@@ -215,7 +216,7 @@ def privado():
     reservas_mes = df_reservas.groupby("AnoMes").size()
 
     fig2, ax2 = plt.subplots()
-    reservas_mes.plot(kind="bar", ax=ax2, color='lightgreen')
+    reservas_mes.plot(kind="bar", ax=ax2, color='#003366')
     ax2.set_title("Reservas por Mês")
     ax2.set_ylabel("Nº de Reservas")
     plt.xticks(rotation=45)
@@ -286,6 +287,7 @@ def privado():
         <div class="col-md-6"><img src="data:image/png;base64,{grafico2}" class="img-fluid"></div>
         <div class="col-md-6"><img src="data:image/png;base64,{grafico3}" class="img-fluid"></div>
     </div>
+    <p class="text-muted mt-4"><em>Nota: Os dados apresentados são fictícios e utilizados apenas para fins demonstrativos.</em></p>
     """
 
     return render_template_string(TEMPLATE_BASE, titulo="Área Privada", conteudo=conteudo)
